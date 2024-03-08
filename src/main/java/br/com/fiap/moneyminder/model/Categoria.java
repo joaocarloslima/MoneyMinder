@@ -1,14 +1,19 @@
 package br.com.fiap.moneyminder.model;
 
-import java.util.Random;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import lombok.Data;
 
-public record Categoria(Long id, String nome, String icone) {
+@Data
+@Entity
+public class Categoria {
 
-    public Categoria(Long id, String nome, String icone){
-        var key = (id != null) ? id : Math.abs( new Random().nextLong() );
-        this.id = key;
-        this.icone = icone;
-        this.nome = nome;
-    }
+    @Id @GeneratedValue(strategy = GenerationType.AUTO)
+    private Long id;
+    private String nome;
+    private String icone;
 
-} 
+
+}
