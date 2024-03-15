@@ -1,11 +1,10 @@
 package br.com.fiap.moneyminder.controller;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import static org.springframework.http.HttpStatus.CREATED;
+import static org.springframework.http.HttpStatus.NO_CONTENT;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,12 +21,12 @@ import org.springframework.web.server.ResponseStatusException;
 
 import br.com.fiap.moneyminder.model.Categoria;
 import br.com.fiap.moneyminder.repository.CategoriaRepository;
+import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @RequestMapping("categoria")
+@Slf4j
 public class CategoriaController {
-
-    Logger log = LoggerFactory.getLogger(getClass());
 
     @Autowired
     CategoriaRepository categoriaRepository;
@@ -38,11 +37,10 @@ public class CategoriaController {
     }
 
     @PostMapping
-    @ResponseStatus(code = HttpStatus.CREATED)
+    @ResponseStatus(CREATED)
     public Categoria create(@RequestBody Categoria categoria) {
         log.info("cadastrando categoria: {}", categoria);
-        categoriaRepository.save(categoria);
-        return categoria;
+        return categoriaRepository.save(categoria);
     }
 
     @GetMapping("{id}")
@@ -58,26 +56,24 @@ public class CategoriaController {
 
 
     @DeleteMapping("{id}")
-    public ResponseEntity<Object> destroy(@PathVariable Long id) {
+    @ResponseStatus(NO_CONTENT)
+    public void destroy(@PathVariable Long id) {
         log.info("apagando categoria {}", id);
 
         verificarSeExisteCategoria(id);
-
         categoriaRepository.deleteById(id);
-        return ResponseEntity.noContent().build();
-
     }
 
 
     @PutMapping("{id}")
-    public ResponseEntity<Object> update(@PathVariable Long id, @RequestBody Categoria categoria){
+    public Categoria update(@PathVariable Long id, @RequestBody Categoria categoria){
         log.info("atualizando categoria id {} para {}", id, categoria);
         
         verificarSeExisteCategoria(id);
 
         categoria.setId(id);
-        categoriaRepository.save(categoria);
-        return ResponseEntity.ok(categoria);
+        return categoriaRepository.save(categoria);
+
     }
 
     
