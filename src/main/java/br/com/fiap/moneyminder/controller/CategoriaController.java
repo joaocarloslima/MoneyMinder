@@ -24,6 +24,10 @@ import org.springframework.web.server.ResponseStatusException;
 
 import br.com.fiap.moneyminder.model.Categoria;
 import br.com.fiap.moneyminder.repository.CategoriaRepository;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 
@@ -31,6 +35,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequestMapping("categoria")
 @Slf4j
 @CacheConfig(cacheNames = "categorias")
+@Tag(name = "categorias", description = "Endpoint relacionados com categorias de movimentações")
 public class CategoriaController {
 
     @Autowired
@@ -38,6 +43,7 @@ public class CategoriaController {
 
     @GetMapping
     @Cacheable
+    @Operation(summary = "Lista todas as categorias cadastradas no sistema.", description = "Endpoint que retorna um array de objetos do tipo categoria com todas as categorias do usuário atual")
     public List<Categoria> index() {
         return categoriaRepository.findAll();
     }
@@ -45,23 +51,26 @@ public class CategoriaController {
     @PostMapping
     @ResponseStatus(CREATED)
     @CacheEvict(allEntries = true)
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "400", description = "Erro de validação da categoria"),
+            @ApiResponse(responseCode = "201", description = "Categoria cadastrada com sucesso")
+    })
     public Categoria create(@RequestBody @Valid Categoria categoria) {
         log.info("cadastrando categoria: {}", categoria);
         return categoriaRepository.save(categoria);
     }
-    
+
     @GetMapping("{id}")
     public ResponseEntity<Categoria> get(@PathVariable Long id) {
         log.info("Buscar por id: {}", id);
-        
+
         return categoriaRepository
-        .findById(id)
-        .map(ResponseEntity::ok)
-        .orElse(ResponseEntity.notFound().build());
-        
+                .findById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+
     }
-    
-    
+
     @DeleteMapping("{id}")
     @ResponseStatus(NO_CONTENT)
     @CacheEvict(allEntries = true)
@@ -71,13 +80,12 @@ public class CategoriaController {
         verificarSeExisteCategoria(id);
         categoriaRepository.deleteById(id);
     }
-    
-    
+
     @PutMapping("{id}")
     @CacheEvict(allEntries = true)
-    public Categoria update(@PathVariable Long id, @RequestBody Categoria categoria){
+    public Categoria update(@PathVariable Long id, @RequestBody Categoria categoria) {
         log.info("atualizando categoria id {} para {}", id, categoria);
-        
+
         verificarSeExisteCategoria(id);
 
         categoria.setId(id);
@@ -85,14 +93,11 @@ public class CategoriaController {
 
     }
 
-    
     private void verificarSeExisteCategoria(Long id) {
         categoriaRepository
-            .findById(id)
-            .orElseThrow(
-                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Categoria não encontrada" )
-            );
+                .findById(id)
+                .orElseThrow(
+                        () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Categoria não encontrada"));
     }
-
 
 }

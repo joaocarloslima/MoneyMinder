@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -38,7 +39,7 @@ public class MovimentacaoController {
     public Page<Movimentacao> index(
         @RequestParam(required = false) String categoria,
         @RequestParam(required = false) Integer mes,
-        @PageableDefault(sort = "data", direction = Direction.DESC) Pageable pageable
+        @ParameterObject @PageableDefault(sort = "data", direction = Direction.DESC) Pageable pageable
 
     ){
 
