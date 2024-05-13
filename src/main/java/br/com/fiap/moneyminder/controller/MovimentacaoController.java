@@ -1,9 +1,12 @@
 package br.com.fiap.moneyminder.controller;
 
+
+
+import static org.springframework.http.HttpStatus.CREATED;
+
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import org.springdoc.core.annotations.ParameterObject;
@@ -13,11 +16,19 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.data.web.PagedResourcesAssembler;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.PagedModel;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import br.com.fiap.moneyminder.model.Movimentacao;
@@ -35,27 +46,37 @@ public class MovimentacaoController {
     @Autowired
     MovimentacaoRepository repository;
 
+    @Autowired
+    PagedResourcesAssembler<Movimentacao> pageAssembler;
+
     @GetMapping
-    public Page<Movimentacao> index(
+    public PagedModel<EntityModel<Movimentacao>> index(
         @RequestParam(required = false) String categoria,
         @RequestParam(required = false) Integer mes,
         @ParameterObject @PageableDefault(sort = "data", direction = Direction.DESC) Pageable pageable
 
     ){
 
+        Page<Movimentacao> page = null;
+
         if (mes != null && categoria != null){
-            return repository.findByCategoriaNomeAndMes(categoria, mes, pageable);
+            page = repository.findByCategoriaNomeAndMes(categoria, mes, pageable);
         }
 
         if (mes != null){
-            return repository.findByMes(mes, pageable);
+            page = repository.findByMes(mes, pageable);
         }
 
         if (categoria != null){
-            return repository.findByCategoriaNomeIgnoreCase(categoria, pageable);
+            page = repository.findByCategoriaNomeIgnoreCase(categoria, pageable);
         }
        
-        return repository.findAll(pageable);
+        if(page == null){
+            page = repository.findAll(pageable);
+        }
+
+        return pageAssembler.toModel(page, Movimentacao::toEntityModel);
+
     }
 
     @GetMapping("maior")
@@ -96,8 +117,34 @@ public class MovimentacaoController {
 
 
     @PostMapping
-    public Movimentacao create(@RequestBody @Valid Movimentacao movimentacao){
-        return repository.save(movimentacao);
+    @ResponseStatus(CREATED)
+    public ResponseEntity<Movimentacao> create(@RequestBody @Valid Movimentacao movimentacao){
+        repository.save(movimentacao);
+
+        return ResponseEntity.created(
+                    movimentacao.toEntityModel().getLink("self").get().toUri()
+                ).body(movimentacao);
+    }
+
+    @GetMapping("{id}")
+    public EntityModel<Movimentacao> get(@PathVariable Long id){
+        var movimentacao = repository.findById(id).orElseThrow(
+            () -> new IllegalArgumentException("movimentação não encontrada")
+        );
+
+        return movimentacao.toEntityModel();
+    }
+
+    @DeleteMapping("{id}")
+    @ResponseStatus(code = HttpStatus.NO_CONTENT)
+    public ResponseEntity<Object> destroy(@PathVariable Long id){
+        repository.findById(id).orElseThrow(
+            () -> new IllegalArgumentException("movimentação não encontrada")
+        );
+
+        repository.deleteById(id);
+
+        return ResponseEntity.noContent().build();
     }
     
 }
